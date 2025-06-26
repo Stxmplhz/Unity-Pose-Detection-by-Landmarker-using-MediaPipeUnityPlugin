@@ -25,5 +25,8 @@ public class PoseRequirement : ScriptableObject
 
     [Header("Timing")]
     public float TimeLimit = 10f;   // Time allowed for this pose
+
+    [Header("How To Video (Local StreamingAssets)")]
+    public string LocalVideoFileName;  // Video to teach player how to do each pose ex. "jump.mp4" 
 }
 

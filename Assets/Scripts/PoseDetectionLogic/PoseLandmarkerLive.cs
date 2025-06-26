@@ -16,7 +16,6 @@ public class PoseLandmarkerLive : MonoBehaviour
 
     public event Action<List<Vector3>> OnLandmarksUpdated;
 
-    // Use queue to make callback work in main thread.
     private readonly Queue<Action> _mainThreadActions = new Queue<Action>();
 
     void Start()
@@ -40,13 +39,19 @@ public class PoseLandmarkerLive : MonoBehaviour
                     return;
 
                 var lmList = result.poseLandmarks[0].landmarks;
+
+                for (int i = 0; i < lmList.Count; i++)
+                {
+                    var lm = lmList[i];
+                    Debug.Log($"Landmark[{i}] - X: {lm.x:F3}, Y: {lm.y:F3}, Z: {lm.z:F3}");
+                }
+
                 List<Vector3> landmarks = new List<Vector3>();
                 foreach (var lm in lmList)
                 {
                     landmarks.Add(new Vector3(lm.x, lm.y, lm.z));
                 }
 
-                // Wait for call in main thread in Update()
                 _mainThreadActions.Enqueue(() => OnLandmarksUpdated?.Invoke(landmarks));
             });
 
@@ -55,7 +60,6 @@ public class PoseLandmarkerLive : MonoBehaviour
 
     void Update()
     {
-        // Call various callbacks waiting in the main thread.
         while (_mainThreadActions.Count > 0)
         {
             var action = _mainThreadActions.Dequeue();

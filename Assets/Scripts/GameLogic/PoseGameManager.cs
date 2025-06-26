@@ -1,4 +1,4 @@
-using System.Collections;
+using System.Collections;  
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
@@ -14,21 +14,30 @@ public class PoseGameManager : MonoBehaviour
     [Header("UI References")]
     public GameObject poseIntroPanel;
     public GameObject resultPanel;
-    public Image poseIconUI;     
-    public Image poseIconImage;       
+    public Image poseIconUI;
+    public Image poseIconImage;
     public Image introStatusIcon;
     public Image resultStatusIcon;
+    public Image blackFilter;
     public TextMeshProUGUI poseThaiName;
     public TextMeshProUGUI countText;
     public TextMeshProUGUI uiText;
     public TextMeshProUGUI resultText;
+    public UnityEngine.Video.VideoPlayer videoPlayer;
+    public GameObject videoPlayerQuadObject; 
+
+    [Header("Button")]
+    public Button howToButton;
+    public Button closeVideoButton;
+    public Button pauseButton;
+    public Button continueButton;
+    public Button retryButton;
 
     [Header("Result UI")]
-    public GameObject retryButton; 
-    public float introDelay = 4f;   
-    public float resultSuccessDelay = 3f; 
+    public float introDelay = 4f;
+    public float resultSuccessDelay = 3f;
 
-    [Header("Icons")]
+    [Header("Status Icons")]
     public Sprite hourglassIcon;
     public Sprite successIcon;
     public Sprite failIcon;
@@ -38,8 +47,7 @@ public class PoseGameManager : MonoBehaviour
     private AudioSource audioSource;
 
     [Header("Timing")]
-    public float countCooldown = 1.0f;
-
+    public float countCooldown = 0.5f;
     private int currentPoseIndex = 0;
     private PoseRequirement currentPose;
     private float timeRemaining;
@@ -49,6 +57,7 @@ public class PoseGameManager : MonoBehaviour
     private bool isPoseActive = false;
     private Coroutine poseTimerCoroutine;
     private string lastUIText = "";
+    private bool isPaused = false;
 
     void Start()
     {
@@ -64,6 +73,11 @@ public class PoseGameManager : MonoBehaviour
         uiText?.gameObject.SetActive(false);
         poseIconUI?.gameObject.SetActive(false);
         poseIconImage?.gameObject.SetActive(false);
+        howToButton?.gameObject.SetActive(false);
+        closeVideoButton.gameObject.SetActive(false);
+        pauseButton?.gameObject.SetActive(false);
+        continueButton?.gameObject.SetActive(false);
+        blackFilter?.gameObject.SetActive(false);
 
         detector.OnLandmarksUpdated += OnLandmarksDetected;
 
@@ -91,16 +105,20 @@ public class PoseGameManager : MonoBehaviour
 
         poseIntroPanel?.SetActive(true);
         CameraPreview?.SetActive(false);
-        poseIconUI?.gameObject.SetActive(true); 
+        poseIconUI?.gameObject.SetActive(true);
         uiText?.gameObject.SetActive(false);
-        retryButton?.SetActive(false);
+        retryButton?.gameObject.SetActive(false);
         poseIconImage?.gameObject.SetActive(false);
+        howToButton?.gameObject.SetActive(false);
+        closeVideoButton.gameObject.SetActive(false);
+        pauseButton?.gameObject.SetActive(false);
+        blackFilter?.gameObject.SetActive(false);
 
         if (poseIconUI != null)
         {
             poseIconUI.sprite = currentPose.PoseIcon;
             poseIconUI.preserveAspect = true;
-        }    
+        }
         if (introStatusIcon != null && hourglassIcon != null) introStatusIcon.sprite = hourglassIcon;
         if (poseThaiName != null) poseThaiName.text = currentPose.PoseNameThai;
 
@@ -121,12 +139,17 @@ public class PoseGameManager : MonoBehaviour
         CameraPreview?.SetActive(true);
         uiText?.gameObject.SetActive(true);
         poseIconImage?.gameObject.SetActive(true);
+        howToButton?.gameObject.SetActive(true);
+        closeVideoButton.gameObject.SetActive(false);
+        pauseButton?.gameObject.SetActive(true);
+        continueButton?.gameObject.SetActive(false);
+        blackFilter?.gameObject.SetActive(false);
 
         if (poseIconImage != null)
         {
             poseIconImage.sprite = currentPose.PoseIcon;
             poseIconImage.preserveAspect = true;
-        }    
+        }
 
         isPoseActive = true;
         lastUIText = "";
@@ -139,7 +162,10 @@ public class PoseGameManager : MonoBehaviour
     {
         while (timeRemaining > 0f)
         {
-            timeRemaining -= Time.deltaTime;
+            if (!isPaused)
+            {
+                timeRemaining -= Time.deltaTime;
+            }
             yield return null;
 
             if (currentPose.Type == PoseType.Holding && holdTimer >= currentPose.DurationRequired)
@@ -169,6 +195,10 @@ public class PoseGameManager : MonoBehaviour
         poseIntroPanel?.SetActive(false);
         uiText?.gameObject.SetActive(false);
         poseIconImage?.gameObject.SetActive(false);
+        howToButton?.gameObject.SetActive(false);
+        closeVideoButton.gameObject.SetActive(false);
+        pauseButton?.gameObject.SetActive(false);
+        blackFilter?.gameObject.SetActive(true);
 
         if (poseIconUI != null)
         {
@@ -197,22 +227,23 @@ public class PoseGameManager : MonoBehaviour
 
         if (success)
         {
-            retryButton?.SetActive(false);
+            retryButton?.gameObject.SetActive(false);
             currentPoseIndex++;
             Invoke(nameof(ProceedToNext), resultSuccessDelay);
         }
         else
         {
-            retryButton?.SetActive(true); 
+            retryButton?.gameObject.SetActive(true);
         }
     }
 
     public void RetryCurrentPose()
     {
         resultPanel?.SetActive(false);
-        retryButton?.SetActive(false);
+        retryButton?.gameObject.SetActive(false);
         poseIconUI?.gameObject.SetActive(true);
         poseIconImage?.gameObject.SetActive(false);
+        blackFilter?.gameObject.SetActive(false);
 
         RestartCurrentPose();
     }
@@ -223,9 +254,9 @@ public class PoseGameManager : MonoBehaviour
         holdTimer = 0f;
         counter = 0;
         isPoseActive = false;
-        
+
         poseIntroPanel?.SetActive(true);
-        poseIconUI?.gameObject.SetActive(true); 
+        poseIconUI?.gameObject.SetActive(true);
         uiText?.gameObject.SetActive(false);
         poseIconImage?.gameObject.SetActive(false);
 
@@ -252,6 +283,7 @@ public class PoseGameManager : MonoBehaviour
     void ProceedToNext()
     {
         resultPanel?.SetActive(false);
+        blackFilter?.gameObject.SetActive(false);
         StartNextPose();
     }
 
@@ -294,4 +326,102 @@ public class PoseGameManager : MonoBehaviour
             }
         }
     }
+
+    IEnumerator PlayVideoOnAndroid(string path)
+    {
+        using (UnityEngine.Networking.UnityWebRequest request = UnityEngine.Networking.UnityWebRequest.Get(path))
+        {
+            yield return request.SendWebRequest();
+            if (request.result != UnityEngine.Networking.UnityWebRequest.Result.Success)
+            {
+                Debug.LogError("Video Load Error: " + request.error);
+                yield break;
+            }
+
+            videoPlayer.url = path;
+            videoPlayer.gameObject.SetActive(true);
+            videoPlayer.Play();
+        }
+    }
+
+    public void OnHowToClicked()
+    {
+        isPoseActive = false;
+        isPaused = true;
+
+        if (poseTimerCoroutine != null)
+            StopCoroutine(poseTimerCoroutine);
+
+        if (videoPlayerQuadObject != null)
+        {
+            float width = 1f;
+            float height = width * 1080f / 1920f;
+            videoPlayerQuadObject.transform.localScale = new Vector3(width, height, 1f);
+            videoPlayerQuadObject.SetActive(true);
+        }
+
+        videoPlayer.renderMode = UnityEngine.Video.VideoRenderMode.MaterialOverride;
+        videoPlayer.targetMaterialRenderer = videoPlayerQuadObject?.GetComponent<Renderer>();
+        videoPlayer.targetMaterialProperty = "_MainTex";
+
+        CameraPreview?.SetActive(false);
+        closeVideoButton?.gameObject.SetActive(true);
+        blackFilter?.gameObject.SetActive(true);
+
+        string videoPath = System.IO.Path.Combine(Application.streamingAssetsPath, currentPose.LocalVideoFileName);
+
+    #if UNITY_ANDROID
+            StartCoroutine(PlayVideoOnAndroid(videoPath));  
+    #else
+            videoPlayer.url = "file://" + videoPath;
+            videoPlayer.gameObject.SetActive(true);
+            videoPlayer.Play();
+    #endif
+    }
+
+    public void OnCloseVideo()
+    {
+        videoPlayer.Stop();
+        videoPlayer.gameObject.SetActive(false);
+        videoPlayerQuadObject?.SetActive(false); 
+
+        CameraPreview?.SetActive(true);
+        closeVideoButton?.gameObject.SetActive(false);
+        blackFilter?.gameObject.SetActive(false);
+
+        isPaused = false;
+        isPoseActive = true;
+        poseTimerCoroutine = StartCoroutine(PoseTimeLimit());
+    }
+
+    public void OnPauseClicked()
+    {
+        isPaused = true;
+        isPoseActive = false;
+        CameraPreview?.SetActive(false);
+        pauseButton?.gameObject.SetActive(true);
+        continueButton?.gameObject.SetActive(true);
+        blackFilter?.gameObject.SetActive(true);
+
+        isPaused = true;
+        isPoseActive = false;
+        if (poseTimerCoroutine != null)
+            StopCoroutine(poseTimerCoroutine);
+        
+    }
+
+    public void OnContinuePlayClicked()
+    {
+        if (poseTimerCoroutine != null)
+            StopCoroutine(poseTimerCoroutine);
+
+        isPaused = false;
+        isPoseActive = true;
+        CameraPreview?.SetActive(true);
+        pauseButton?.gameObject.SetActive(true);
+        continueButton?.gameObject.SetActive(false);
+        blackFilter?.gameObject.SetActive(false);
+        poseTimerCoroutine = StartCoroutine(PoseTimeLimit());
+    }
+
 }

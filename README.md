@@ -13,10 +13,9 @@ This project reposity using MediaPipeUnityPlugin from Homuler (https://github.co
   - PoseGameConfig.cs: Keep a list of the moves you want to perform in each stage, such as
     - Jump - Count 10 - TimeLimit 30s
     - Twist - Hold 5s - TimeLimit 20s
-  - PoseMechanic.scene to be as the simple set-up in real game.
 
 **After clone this reposity:**
-1. Download 'mediapipe_android.aar' from https://drive.google.com/file/d/1UDWCq5JbVBwnqvQ1O1TLXW3Kq0QlAVN5/view?usp=sharing
+1. Download 'mediapipe_android.aar' (https://github.com/homuler/MediaPipeUnityPlugin/blob/master/Packages/com.github.homuler.mediapipe/Runtime/Plugins/Android/mediapipe_android.aar.meta)
 2. Put it in "Unity-Pose-Detection-by-Landmarker-using-MediaPipeUnityPlugin\Packages\com.github.homuler.mediapipe\Runtime\Plugins\Android"
 
 **Enforce these packages with the following versions:**
