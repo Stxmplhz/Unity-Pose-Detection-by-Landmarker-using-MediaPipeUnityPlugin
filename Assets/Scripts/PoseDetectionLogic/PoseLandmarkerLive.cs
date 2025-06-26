@@ -18,6 +18,10 @@ public class PoseLandmarkerLive : MonoBehaviour
 
     private readonly Queue<Action> _mainThreadActions = new Queue<Action>();
 
+    private Dictionary<int, Vector3> previousLandmarks = new Dictionary<int, Vector3>();
+
+    private bool isPaused = false;
+
     void Start()
     {
         webcamTexture = new WebCamTexture();
@@ -40,22 +44,42 @@ public class PoseLandmarkerLive : MonoBehaviour
 
                 var lmList = result.poseLandmarks[0].landmarks;
 
+                List<Vector3> landmarks = new List<Vector3>();
                 for (int i = 0; i < lmList.Count; i++)
                 {
                     var lm = lmList[i];
-                    Debug.Log($"Landmark[{i}] - X: {lm.x:F3}, Y: {lm.y:F3}, Z: {lm.z:F3}");
-                }
+                    var current = new Vector3(lm.x, lm.y, lm.z);
 
-                List<Vector3> landmarks = new List<Vector3>();
-                foreach (var lm in lmList)
-                {
-                    landmarks.Add(new Vector3(lm.x, lm.y, lm.z));
+                    if (previousLandmarks.TryGetValue(i, out Vector3 prev))
+                    {
+                        if (IsMoving(prev, current))
+                        {
+                            Debug.Log($"Landmark[{i}] moved to X:{current.x:F3}, Y:{current.y:F3}, Z:{current.z:F3}");
+                        }
+                    }
+
+                    previousLandmarks[i] = current;
+                    landmarks.Add(current);
                 }
 
                 _mainThreadActions.Enqueue(() => OnLandmarksUpdated?.Invoke(landmarks));
             });
 
         landmarker = PoseLandmarker.CreateFromOptions(options);
+    }
+
+    public void SetPaused(bool paused)
+    {
+        isPaused = paused;
+
+        if (isPaused)
+        {
+            Debug.Log("Paused - stop sending landmarks");
+        }
+        else
+        {
+            Debug.Log("Resumed - continue sending landmarks");
+        }
     }
 
     void Update()
@@ -65,6 +89,9 @@ public class PoseLandmarkerLive : MonoBehaviour
             var action = _mainThreadActions.Dequeue();
             action?.Invoke();
         }
+
+        if (isPaused)
+            return;
 
         if (webcamTexture == null || !webcamTexture.didUpdateThisFrame || landmarker == null)
             return;
@@ -77,10 +104,16 @@ public class PoseLandmarkerLive : MonoBehaviour
         long timestamp = (long)(Time.time * 1000);
         landmarker.DetectAsync(mpImage, timestamp);
     }
+    
 
     private void OnDestroy()
     {
         webcamTexture?.Stop();
         landmarker?.Close();
+    }
+
+    private bool IsMoving(Vector3 prev, Vector3 curr, float threshold = 0.01f)
+    {
+        return Vector3.Distance(prev, curr) > threshold;
     }
 }

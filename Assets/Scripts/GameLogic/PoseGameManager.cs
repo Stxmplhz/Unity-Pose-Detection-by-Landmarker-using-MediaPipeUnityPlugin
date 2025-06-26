@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
+using UnityEngine.Video;
 
 public class PoseGameManager : MonoBehaviour
 {
@@ -24,14 +25,19 @@ public class PoseGameManager : MonoBehaviour
     public TextMeshProUGUI uiText;
     public TextMeshProUGUI resultText;
     public UnityEngine.Video.VideoPlayer videoPlayer;
-    public GameObject videoPlayerQuadObject; 
+    public RawImage howToVideoRawImage;
 
     [Header("Button")]
     public Button howToButton;
-    public Button closeVideoButton;
     public Button pauseButton;
     public Button continueButton;
     public Button retryButton;
+
+    [Header("Video")]
+    public RenderTexture videoRenderTexture;
+    public Button playVideoButton;
+    public Button pauseVideoButton;
+    public Button closeVideoButton;
 
     [Header("Result UI")]
     public float introDelay = 4f;
@@ -67,8 +73,8 @@ public class PoseGameManager : MonoBehaviour
             return;
         }
 
-        poseIntroPanel?.SetActive(false);
         CameraPreview?.SetActive(true);
+        poseIntroPanel?.SetActive(false);
         resultPanel?.SetActive(false);
         uiText?.gameObject.SetActive(false);
         poseIconUI?.gameObject.SetActive(false);
@@ -79,6 +85,14 @@ public class PoseGameManager : MonoBehaviour
         continueButton?.gameObject.SetActive(false);
         blackFilter?.gameObject.SetActive(false);
 
+        howToVideoRawImage?.gameObject.SetActive(false);
+        videoPlayer.Stop();
+        videoPlayer.gameObject.SetActive(false); 
+        videoPlayer.playOnAwake = false;
+
+        isPaused = false;
+        isPoseActive = true;
+        detector.SetPaused(false);
         detector.OnLandmarksUpdated += OnLandmarksDetected;
 
         audioSource = GetComponent<AudioSource>();
@@ -102,6 +116,7 @@ public class PoseGameManager : MonoBehaviour
         holdTimer = 0f;
         counter = 0;
         isPoseActive = false;
+        detector.SetPaused(true);
 
         poseIntroPanel?.SetActive(true);
         CameraPreview?.SetActive(false);
@@ -152,6 +167,7 @@ public class PoseGameManager : MonoBehaviour
         }
 
         isPoseActive = true;
+        detector.SetPaused(false);
         lastUIText = "";
 
         if (poseTimerCoroutine != null) StopCoroutine(poseTimerCoroutine);
@@ -188,6 +204,7 @@ public class PoseGameManager : MonoBehaviour
     {
         isPoseActive = false;
         if (poseTimerCoroutine != null) StopCoroutine(poseTimerCoroutine);
+        detector.SetPaused(true);
 
         resultPanel?.SetActive(true);
         CameraPreview?.SetActive(false);
@@ -199,6 +216,7 @@ public class PoseGameManager : MonoBehaviour
         closeVideoButton.gameObject.SetActive(false);
         pauseButton?.gameObject.SetActive(false);
         blackFilter?.gameObject.SetActive(true);
+        howToVideoRawImage?.gameObject.SetActive(false);
 
         if (poseIconUI != null)
         {
@@ -284,6 +302,7 @@ public class PoseGameManager : MonoBehaviour
     {
         resultPanel?.SetActive(false);
         blackFilter?.gameObject.SetActive(false);
+        howToVideoRawImage?.gameObject.SetActive(false);
         StartNextPose();
     }
 
@@ -327,6 +346,41 @@ public class PoseGameManager : MonoBehaviour
         }
     }
 
+    // ----------------- Pause & Continue Play System -----------------
+        public void OnPauseClicked()
+    {
+        isPaused = true;
+        isPoseActive = false;
+        CameraPreview?.SetActive(false);
+        pauseButton?.gameObject.SetActive(true);
+        continueButton?.gameObject.SetActive(true);
+        blackFilter?.gameObject.SetActive(true);
+
+        isPaused = true;
+        isPoseActive = false;
+        detector.SetPaused(true);
+        if (poseTimerCoroutine != null)
+            StopCoroutine(poseTimerCoroutine);
+
+    }
+
+    public void OnContinuePlayClicked()
+    {
+        if (poseTimerCoroutine != null)
+            StopCoroutine(poseTimerCoroutine);
+
+        isPaused = false;
+        isPoseActive = true;
+        detector.SetPaused(false);
+        CameraPreview?.SetActive(true);
+        pauseButton?.gameObject.SetActive(true);
+        continueButton?.gameObject.SetActive(false);
+        blackFilter?.gameObject.SetActive(false);
+        poseTimerCoroutine = StartCoroutine(PoseTimeLimit());
+        
+    }
+
+    // ----------------- Tutorial Video System -----------------
     IEnumerator PlayVideoOnAndroid(string path)
     {
         using (UnityEngine.Networking.UnityWebRequest request = UnityEngine.Networking.UnityWebRequest.Get(path))
@@ -344,25 +398,30 @@ public class PoseGameManager : MonoBehaviour
         }
     }
 
+    private void OnVideoPrepared(VideoPlayer vp)
+    {
+        vp.prepareCompleted -= OnVideoPrepared;
+        vp.Play();
+        playVideoButton?.gameObject.SetActive(false);
+        pauseVideoButton?.gameObject.SetActive(true);
+        Debug.Log("▶️ Video is now playing.");
+    }
+
     public void OnHowToClicked()
     {
-        isPoseActive = false;
         isPaused = true;
+        isPoseActive = false;
+        detector.SetPaused(true);
 
         if (poseTimerCoroutine != null)
             StopCoroutine(poseTimerCoroutine);
 
-        if (videoPlayerQuadObject != null)
-        {
-            float width = 1f;
-            float height = width * 1080f / 1920f;
-            videoPlayerQuadObject.transform.localScale = new Vector3(width, height, 1f);
-            videoPlayerQuadObject.SetActive(true);
-        }
+        videoPlayer.gameObject.SetActive(true);
+        howToVideoRawImage.gameObject.SetActive(true);
 
-        videoPlayer.renderMode = UnityEngine.Video.VideoRenderMode.MaterialOverride;
-        videoPlayer.targetMaterialRenderer = videoPlayerQuadObject?.GetComponent<Renderer>();
-        videoPlayer.targetMaterialProperty = "_MainTex";
+        videoPlayer.renderMode = VideoRenderMode.RenderTexture;
+        videoPlayer.targetTexture = videoRenderTexture;
+        howToVideoRawImage.texture = videoRenderTexture;
 
         CameraPreview?.SetActive(false);
         closeVideoButton?.gameObject.SetActive(true);
@@ -370,20 +429,51 @@ public class PoseGameManager : MonoBehaviour
 
         string videoPath = System.IO.Path.Combine(Application.streamingAssetsPath, currentPose.LocalVideoFileName);
 
-    #if UNITY_ANDROID
-            StartCoroutine(PlayVideoOnAndroid(videoPath));  
-    #else
-            videoPlayer.url = "file://" + videoPath;
-            videoPlayer.gameObject.SetActive(true);
+#if UNITY_ANDROID
+        videoPath = "jar:file://" + Application.dataPath + "!/assets/" + currentPose.LocalVideoFileName;
+#else
+        videoPath = "file://" + videoPath;
+#endif
+
+        videoPlayer.url = videoPath;
+        videoPlayer.prepareCompleted += OnVideoPrepared;
+        videoPlayer.Prepare();
+
+        pauseVideoButton?.gameObject.SetActive(false);
+        playVideoButton?.gameObject.SetActive(true);
+
+        Debug.Log("📺 Preparing video: " + videoPath);
+    }
+
+    public void PauseVideo()
+    {
+        if (videoPlayer.isPlaying)
+        {
+            videoPlayer.Pause();
+            Debug.Log("⏸️ Video paused.");
+        }
+        pauseVideoButton?.gameObject.SetActive(false);
+        playVideoButton?.gameObject.SetActive(true);
+    }
+
+    public void PlayVideo()
+    {
+        if (!videoPlayer.isPlaying)
+        {
             videoPlayer.Play();
-    #endif
+            Debug.Log("▶️ Video resumed.");
+        }
+        playVideoButton?.gameObject.SetActive(false);
+        pauseVideoButton?.gameObject.SetActive(true);
     }
 
     public void OnCloseVideo()
     {
-        videoPlayer.Stop();
+        if (videoPlayer.isPlaying)
+            videoPlayer.Stop();
+
         videoPlayer.gameObject.SetActive(false);
-        videoPlayerQuadObject?.SetActive(false); 
+        howToVideoRawImage?.gameObject.SetActive(false);
 
         CameraPreview?.SetActive(true);
         closeVideoButton?.gameObject.SetActive(false);
@@ -391,37 +481,17 @@ public class PoseGameManager : MonoBehaviour
 
         isPaused = false;
         isPoseActive = true;
+        detector.SetPaused(false);
         poseTimerCoroutine = StartCoroutine(PoseTimeLimit());
     }
+    
+    IEnumerator WaitForPrepareAndPlay()
+{
+    while (!videoPlayer.isPrepared)
+        yield return null;
 
-    public void OnPauseClicked()
-    {
-        isPaused = true;
-        isPoseActive = false;
-        CameraPreview?.SetActive(false);
-        pauseButton?.gameObject.SetActive(true);
-        continueButton?.gameObject.SetActive(true);
-        blackFilter?.gameObject.SetActive(true);
-
-        isPaused = true;
-        isPoseActive = false;
-        if (poseTimerCoroutine != null)
-            StopCoroutine(poseTimerCoroutine);
-        
-    }
-
-    public void OnContinuePlayClicked()
-    {
-        if (poseTimerCoroutine != null)
-            StopCoroutine(poseTimerCoroutine);
-
-        isPaused = false;
-        isPoseActive = true;
-        CameraPreview?.SetActive(true);
-        pauseButton?.gameObject.SetActive(true);
-        continueButton?.gameObject.SetActive(false);
-        blackFilter?.gameObject.SetActive(false);
-        poseTimerCoroutine = StartCoroutine(PoseTimeLimit());
-    }
+    videoPlayer.Play();
+    Debug.Log("▶️ Video is now playing.");
+}
 
 }

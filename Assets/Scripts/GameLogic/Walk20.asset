@@ -19,4 +19,4 @@ MonoBehaviour:
   DurationRequired: 20
   CountRequired: 0
   TimeLimit: 60
-  HowToVideoURL: 
+  LocalVideoFileName: HowToJump.mp4
