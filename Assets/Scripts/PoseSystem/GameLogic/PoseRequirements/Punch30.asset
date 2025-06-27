@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bfcc0fe2b02d289429b9083a85d2d20c, type: 3}
+  m_Name: Punch30
+  m_EditorClassIdentifier: 
+  PoseName: punch
+  PoseNameThai: "\u0E15\u0E48\u0E2D\u0E22"
+  PoseIcon: {fileID: 21300000, guid: 82e48c1560e43294cacbbfa9b8c93672, type: 3}
+  Type: 1
+  DurationRequired: 0
+  CountRequired: 30
+  TimeLimit: 60
+  LocalVideoFileName: HowToJump.mp4
+  CountSFX: {fileID: 8300000, guid: b6e41e48f824bb44fa73fee50583d25f, type: 3}
+  HoldSFX: {fileID: 0}

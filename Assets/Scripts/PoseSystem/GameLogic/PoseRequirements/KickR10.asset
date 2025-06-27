@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bfcc0fe2b02d289429b9083a85d2d20c, type: 3}
+  m_Name: KickR10
+  m_EditorClassIdentifier: 
+  PoseName: r-kick
+  PoseNameThai: "\u0E40\u0E15\u0E30\u0E02\u0E32\u0E02\u0E27\u0E32"
+  PoseIcon: {fileID: 21300000, guid: 37208df9440fc0d44844431a2dd4c582, type: 3}
+  Type: 1
+  DurationRequired: 0
+  CountRequired: 10
+  TimeLimit: 30
+  LocalVideoFileName: HowToJump.mp4
+  CountSFX: {fileID: 8300000, guid: 25bbf11ea70ad7048bfbfe33cf38874e, type: 3}
+  HoldSFX: {fileID: 0}

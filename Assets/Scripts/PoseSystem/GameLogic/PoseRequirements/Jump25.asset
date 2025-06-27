@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bfcc0fe2b02d289429b9083a85d2d20c, type: 3}
+  m_Name: Jump25
+  m_EditorClassIdentifier: 
+  PoseName: jump
+  PoseNameThai: "\u0E01\u0E23\u0E30\u0E42\u0E14\u0E14"
+  PoseIcon: {fileID: 21300000, guid: e1e10b38a224f894096be3bd970f632c, type: 3}
+  Type: 1
+  DurationRequired: 0
+  CountRequired: 25
+  TimeLimit: 60
+  LocalVideoFileName: HowToJump.mp4
+  CountSFX: {fileID: 8300000, guid: aae11aa4d5944904eb11be40d413dd21, type: 3}
+  HoldSFX: {fileID: 0}
